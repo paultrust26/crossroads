@@ -136,6 +136,21 @@ python backend/run.py
 - Scores from the judge are model outputs and should be checked against the underlying trace before they are trusted.
 - Cost figures use the pricing tables in `metrics.py` and should be updated when provider prices change.
 
+## Citation
+
+```bibtex
+@software{crossroads2026,
+  title={Crossroads: Visual Analytics for Agent Sessions},
+  author={Paul Trust},
+  year={2026},
+  url={https://github.com/paultrust26/crossroads}
+}
+```
+
+## Author
+
+Paul Trust ([trustpaul1000@gmail.com](mailto:trustpaul1000@gmail.com))
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
