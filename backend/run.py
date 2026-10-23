@@ -6,6 +6,34 @@ Usage (from the repository root):
     python backend/run.py --port 8000
 """
 
+import sys
+
+if sys.version_info < (3, 10):
+    raise SystemExit(f"Crossroads needs Python 3.10 or newer; this is Python {sys.version.split()[0]}. "
+                     "Create the virtual environment with a newer python3.")
+
+import os
+from pathlib import Path
+
+
+def load_env_file(path: Path) -> None:
+    """Load KEY=VALUE lines from a .env file into the environment, without overriding existing variables.
+
+    Args:
+        path: The .env file. A missing file is ignored.
+    """
+    if not path.is_file():
+        return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_env_file(Path(__file__).resolve().parent.parent / ".env")
+
 import argparse
 from pathlib import Path
 

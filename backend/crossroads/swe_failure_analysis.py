@@ -10,6 +10,8 @@ failure detection is definitive, not inferred.
 
 from __future__ import annotations
 
+from .llm import extract_json, sampling_kwargs
+
 import json as _json
 import re
 from collections import Counter
@@ -756,7 +758,7 @@ async def run_swe_judge(session_id: str, model: str = _JUDGE_MODEL) -> SweJudgeA
         response = await client.chat.completions.create(
             model=model,
             max_tokens=4096,
-            temperature=0.3,
+            **sampling_kwargs(model, 0.3),
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_msg},
@@ -775,7 +777,7 @@ async def run_swe_judge(session_id: str, model: str = _JUDGE_MODEL) -> SweJudgeA
     text = _extract_json_text(raw_text)
 
     try:
-        data = _json.loads(text)
+        data = extract_json(text)
     except _json.JSONDecodeError:
         return SweJudgeAnalysis(
             available=True, ran=True,
@@ -886,7 +888,7 @@ async def stream_swe_judge(session_id: str, model: str = _JUDGE_MODEL):
         stream = await client.chat.completions.create(
             model=model,
             max_tokens=4096,
-            temperature=0.3,
+            **sampling_kwargs(model, 0.3),
             stream=True,
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -909,7 +911,7 @@ async def stream_swe_judge(session_id: str, model: str = _JUDGE_MODEL):
     text = _extract_json_text(full_text)
 
     try:
-        data = _json.loads(text)
+        data = extract_json(text)
         decision_points = []
         for dp in data.get("key_decision_points", []):
             if isinstance(dp, dict) and "step" in dp:

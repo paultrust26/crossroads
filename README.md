@@ -2,9 +2,9 @@
 
 Crossroads is a visual analytics system for understanding what an LLM agent did during a session: where the tokens went, which steps were productive, where the agent wasted effort, which failures happened, and whether the agent followed user intent.
 
-![Crossroads overview](figures/crossroads_overview.png)
+![Crossroads](figures/crossroads_teaser.png)
 
-*Figure: Crossroads ingests coding agent sessions and SWE-bench trajectories, normalizes each one into a sequence of steps (user queries, tool calls, observations, errors and context compactions), computes trace signals that need no model, optionally runs an LLM judge, and presents the results as an interactive dashboard together with suggested mitigations.*
+*Figure: Crossroads on the five bundled SWE-bench runs. (a) Corpus overview with tokens, steps, observation savings and outcome per run. (b) Agent thoughts grouped by topic. (c) Failure analysis: heuristic failure modes per run and the LLM judge's failure patterns. (d) Step trace of one run, with the observations that were truncated and how much each was compressed. (e) The failure verdict for that run. Source: `figures/make_teaser.py`.*
 
 ## Why Crossroads
 
@@ -28,7 +28,11 @@ Trace based metrics (cost, cache, re-reads) need no model. Only the views marked
 
 ## Installation
 
+Python 3.10 or newer is required (tested with 3.12). Check your version with `python3 --version`.
+
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -43,6 +47,12 @@ python backend/run.py --port 8000
 Then open http://127.0.0.1:8000. The API is available under `/api/`, for example `/api/health` and `/api/trajectories`.
 
 Without any configuration Crossroads reads sessions from `~/.claude/projects`. Point it elsewhere with the environment variables below.
+
+`examples/swe/` holds five SWE-smith trajectories from Devstral 24B runs (one resolved, four failed) across five repositories, in the format the SWE views read. They let you explore the SWE views without loading your own data. To open them:
+
+```bash
+CROSSROADS_SWE_DIR=examples/swe python backend/run.py --port 8000
+```
 
 Running the tests (from the repository root):
 
@@ -123,7 +133,7 @@ python backend/run.py
 ├── frontend/
 │   ├── dist/                   # Built web interface (served by run.py)
 │   └── package.json
-├── figures/                    # Overview figure (PNG and its TikZ source)
+├── figures/                    # Teaser figure, its UI captures and the script that composes it
 ├── tests/                      # API smoke tests
 ├── requirements.txt
 ├── LICENSE                     # MIT

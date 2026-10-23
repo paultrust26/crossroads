@@ -166,6 +166,23 @@ def _has_error(observation: str) -> bool:
     return False
 
 
+def _step_obs_tokens(step: dict, kind: str) -> int:
+    """Return a step's raw or served observation tokens.
+
+    Trajectory files name these ``obs_tokens_raw`` / ``obs_tokens_served``; the
+    older ``raw_obs_tokens`` / ``served_obs_tokens`` names are also accepted.
+
+    Args:
+        step: One trajectory step.
+        kind: ``"raw"`` or ``"served"``.
+
+    Returns:
+        The token count, or 0 when the step has none.
+    """
+    value = step.get(f"obs_tokens_{kind}", step.get(f"{kind}_obs_tokens", 0))
+    return int(value or 0)
+
+
 def _parse_method_data(
     task_id: str,
     method: str,
@@ -200,6 +217,9 @@ def _parse_method_data(
 
         pass
 
+    obs_raw = int(data.get("obs_tokens_raw") or sum(_step_obs_tokens(st, "raw") for st in trajectory))
+    obs_served = int(data.get("obs_tokens_served") or sum(_step_obs_tokens(st, "served") for st in trajectory))
+
     return SweSessionSummary(
         id=f"{task_id}__{method}",
         task_id=task_id,
@@ -210,9 +230,9 @@ def _parse_method_data(
         total_tokens=int(data.get("total_tokens", 0)),
         input_tokens=int(data.get("input_tokens", 0)),
         output_tokens=int(data.get("output_tokens", 0)),
-        obs_tokens_raw=int(data.get("obs_tokens_raw", 0)),
-        obs_tokens_served=int(data.get("obs_tokens_served", 0)),
-        savings_pct=float(data.get("savings_pct", 0.0)),
+        obs_tokens_raw=obs_raw,
+        obs_tokens_served=obs_served,
+        savings_pct=float(data.get("savings_pct") or (100.0 * (1 - obs_served / obs_raw) if obs_raw else 0.0)),
         duration_s=float(data.get("duration_s", 0.0)),
         cost_usd=float(data.get("cost_usd") or data.get("agent_cost_usd") or 0.0),
         has_trajectory=has_traj,
@@ -371,8 +391,8 @@ def build_swe_spine(data_dir: Path = _DATA_DIR, session_id: str = "") -> SweSpin
             observation_preview=served_obs[:200],
             input_tokens=int(step_data.get("input_tokens", 0)),
             output_tokens=int(step_data.get("output_tokens", 0)),
-            raw_obs_tokens=int(step_data.get("raw_obs_tokens", 0)),
-            served_obs_tokens=int(step_data.get("served_obs_tokens", 0)),
+            raw_obs_tokens=_step_obs_tokens(step_data, "raw"),
+            served_obs_tokens=_step_obs_tokens(step_data, "served"),
             tier=step_data.get("tier", "") or "",
             file_path=_extract_file_path(args),
             is_edit=_is_edit_step(tool, args),
@@ -406,8 +426,8 @@ def build_swe_conversation(
             thought=step_data.get("thought", "") or "",
             raw_observation=step_data.get("raw_observation", "") or "",
             served_observation=step_data.get("served_observation", "") or "",
-            raw_obs_tokens=int(step_data.get("raw_obs_tokens", 0)),
-            served_obs_tokens=int(step_data.get("served_obs_tokens", 0)),
+            raw_obs_tokens=_step_obs_tokens(step_data, "raw"),
+            served_obs_tokens=_step_obs_tokens(step_data, "served"),
             tier=step_data.get("tier", "") or "",
             file_path=_extract_file_path(args),
             is_edit=_is_edit_step(tool, args),

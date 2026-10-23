@@ -18,6 +18,8 @@ Tier 2 (LLM judge): semantic analysis of user intent vs agent actions.
 
 from __future__ import annotations
 
+from .llm import extract_json, sampling_kwargs
+
 import json as _json
 import re
 from enum import Enum
@@ -584,7 +586,7 @@ async def stream_anomaly_judge(traj: Trajectory, session_path: Optional[Path] = 
         stream = await client.chat.completions.create(
             model=model,
             max_tokens=4096,
-            temperature=0.3,
+            **sampling_kwargs(model, 0.3),
             stream=True,
             messages=[
                 {"role": "system", "content": AUDIT_SYSTEM_PROMPT},
@@ -606,7 +608,7 @@ async def stream_anomaly_judge(traj: Trajectory, session_path: Optional[Path] = 
     text = _extract_json_text(full_text)
 
     try:
-        data = _json.loads(text)
+        data = extract_json(text)
         decision_points = []
         for dp in data.get("decision_points", []):
             if isinstance(dp, dict) and "step" in dp:

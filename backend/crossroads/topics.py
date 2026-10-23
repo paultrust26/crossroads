@@ -110,9 +110,16 @@ def _build_map(
     if dense.shape[1] > 50:
         from sklearn.decomposition import TruncatedSVD
         dense = TruncatedSVD(n_components=50, random_state=_SEED).fit_transform(X)
-    perp = max(5, min(30, n // 3))
-    coords = TSNE(n_components=2, perplexity=perp, random_state=_SEED,
-                  init="pca", learning_rate="auto").fit_transform(dense)
+    if n >= 4:
+        # Perplexity must stay below the number of queries; the cap only applies to small inputs.
+        perp = min(max(5, min(30, n // 3)), n - 1)
+        coords = TSNE(n_components=2, perplexity=perp, random_state=_SEED,
+                      init="pca", learning_rate="auto").fit_transform(dense)
+    else:
+        # t-SNE needs at least four points, so place the few queries on their first two features.
+        coords = np.zeros((n, 2))
+        k = min(2, dense.shape[1])
+        coords[:, :k] = dense[:, :k]
 
     cmin, cmax = coords.min(0), coords.max(0)
     span = np.where(cmax - cmin == 0, 1, cmax - cmin)
